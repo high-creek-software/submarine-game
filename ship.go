@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log/slog"
 	"slices"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -11,18 +10,16 @@ import (
 )
 
 type Ship struct {
-	shipX, shipY          float32
-	shipSpeed             float32
-	shipWidth, shipHeight float32
+	Entity
+	shipSpeed     float32
+	requestCharge func()
 }
 
-func NewShip() *Ship {
+func NewShip(requestCharge func()) *Ship {
 	return &Ship{
-		shipX:      20,
-		shipY:      40,
-		shipSpeed:  5,
-		shipWidth:  150,
-		shipHeight: 50,
+		Entity:        *NewEntity(40, 100, 150, 75),
+		shipSpeed:     5,
+		requestCharge: requestCharge,
 	}
 }
 
@@ -43,22 +40,22 @@ func (s *Ship) move() {
 	}
 
 	// New position
-	moveX := s.shipX + (move * s.shipSpeed)
+	moveX := s.X + (move * s.shipSpeed)
 
 	// Bounds check
 	if moveX < 0 { // going off screen left
 		moveX = 0
-	} else if moveX+s.shipWidth > SCREEN_WIDTH { // going off screen right
-		moveX = SCREEN_WIDTH - s.shipWidth
+	} else if moveX+s.Width > SCREEN_WIDTH { // going off screen right
+		moveX = SCREEN_WIDTH - s.Width
 	}
 
-	s.shipX = moveX
+	s.X = moveX
 }
 
 func (s *Ship) fire() {
 	keys := inpututil.AppendJustPressedKeys(nil)
 	if slices.Contains(keys, ebiten.KeySpace) {
-		slog.Info("Fire requested")
+		s.requestCharge()
 		// Deploy a depth charge
 		// Pass methods to this struct to request fire
 	}
@@ -66,5 +63,5 @@ func (s *Ship) fire() {
 
 func (s *Ship) Draw(screen *ebiten.Image) {
 	// Ship
-	vector.DrawFilledRect(screen, s.shipX, s.shipY, s.shipWidth, s.shipHeight, colornames.Orange, true)
+	vector.DrawFilledRect(screen, s.X, s.Y, s.Width, s.Height, colornames.Orange, true)
 }
