@@ -1,31 +1,42 @@
 package main
 
 import (
+	"gitlab.com/high-creek-software/go2d/components/display"
 	"slices"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/hajimehoshi/ebiten/v2/vector"
-	"golang.org/x/image/colornames"
 )
 
 type Ship struct {
 	Entity
 	shipSpeed     float32
 	requestCharge func()
+
+	sprite *ebiten.Image
+
+	idleAnimation *display.AnimateComponent
 }
 
 func NewShip(requestCharge func()) *Ship {
-	return &Ship{
-		Entity:        *NewEntity(40, 100, 150, 75),
+	ship := &Ship{
+		Entity:        *NewEntity(40, 80, 150, 75),
 		shipSpeed:     5,
 		requestCharge: requestCharge,
 	}
+
+	//ship.sprite = assetLoader.MustLoadImage("assets/ship/0.png")
+
+	idleShip := assetLoader.LoadConcurrentDirectory("assets/ship", "png", 3)
+	ship.idleAnimation = display.NewAnimateComponent(ship, 3, idleShip)
+
+	return ship
 }
 
 func (s *Ship) Update() error {
 	s.move()
 	s.fire()
+	s.idleAnimation.Update()
 	return nil
 }
 
@@ -63,5 +74,26 @@ func (s *Ship) fire() {
 
 func (s *Ship) Draw(screen *ebiten.Image) {
 	// Ship
-	vector.DrawFilledRect(screen, s.X, s.Y, s.Width, s.Height, colornames.Orange, true)
+	//vector.DrawFilledRect(screen, s.X, s.Y, s.Width, s.Height, colornames.Orange, true)
+
+	/*opts := &ebiten.DrawImageOptions{}
+	opts.GeoM.Translate(float64(s.X), float64(s.Y))
+	screen.DrawImage(s.sprite, opts)*/
+	s.idleAnimation.Draw(screen, 0, 0)
+}
+
+func (s *Ship) Scale() (float64, float64) {
+	return 1, 1
+}
+
+func (s *Ship) IsHorizontalFlipped() bool {
+	return false
+}
+
+func (s *Ship) IsVerticalFlipped() bool {
+	return false
+}
+
+func (s *Ship) DrawOffset() (float64, float64) {
+	return 0, 0
 }

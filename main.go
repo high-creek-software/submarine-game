@@ -1,14 +1,15 @@
 package main
 
 import (
-	"image"
+	"embed"
+	"fmt"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
+	"gitlab.com/high-creek-software/go2d/loader"
+	"golang.org/x/image/colornames"
 	_ "image/png"
 	"log/slog"
-	"os"
-
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/vector"
-	"golang.org/x/image/colornames"
 )
 
 const (
@@ -21,6 +22,8 @@ type Game struct {
 	depthCharges []*DepthCharge
 
 	oceanImage *ebiten.Image
+
+	pointerX, pointerY int
 }
 
 func (g *Game) requestCharge() {
@@ -43,6 +46,8 @@ func (g *Game) Update() error {
 	}
 	// Setting the active array back to the depthCharges
 	g.depthCharges = keepDepthCharges
+
+	g.pointerX, g.pointerY = ebiten.CursorPosition()
 
 	// Array of torpedos
 
@@ -84,6 +89,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// for true {
 
 	// }
+
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("%d, %d", g.pointerX, g.pointerY))
 }
 
 func (g *Game) Layout(ow, oh int) (w, h int) {
@@ -91,21 +98,19 @@ func (g *Game) Layout(ow, oh int) (w, h int) {
 	return SCREEN_WIDTH, SCREEN_HEIGHT
 }
 
+//go:embed assets
+var assets embed.FS
+
+var assetLoader *loader.AssetLoader
+
 func main() {
+	assetLoader = loader.NewAssetLoader(assets)
 
 	subGame := &Game{}
 	subGame.ship = NewShip(subGame.requestCharge)
 
-	oceanReader, err := os.Open("assets/ocean.png")
-	if err != nil {
-		slog.Error("error opening ocean image", "error", err)
-		os.Exit(2)
-	}
-	oceanImg, _, err := image.Decode(oceanReader)
-	if err != nil {
-		slog.Error("Error decoding image", "error", err)
-		os.Exit(2)
-	}
+	oceanImg := assetLoader.MustLoadImage("assets/ocean.png")
+
 	subGame.oceanImage = ebiten.NewImageFromImage(oceanImg)
 	ebiten.SetWindowSize(1280, 720)
 	ebiten.SetWindowTitle("Submarine Game")
