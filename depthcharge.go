@@ -7,13 +7,13 @@ import (
 )
 
 type DepthCharge struct {
-	Entity
-	gravity float32
+	*Entity
+	gravity float64
 }
 
-func NewDepthCharge(x, y float32) *DepthCharge {
+func NewDepthCharge(x, y float64) *DepthCharge {
 	return &DepthCharge{
-		Entity:  *NewEntity(x, y, 20, 20),
+		Entity:  NewEntity(x, y, 20, 20),
 		gravity: 3,
 	}
 }
@@ -32,5 +32,5 @@ func (dc *DepthCharge) Update() error {
 }
 
 func (dc *DepthCharge) Draw(screen *ebiten.Image) {
-	vector.DrawFilledRect(screen, dc.X, dc.Y, dc.Width, dc.Height, colornames.Purple, true)
+	vector.DrawFilledRect(screen, float32(dc.X), float32(dc.Y), float32(dc.Width), float32(dc.Height), colornames.Purple, true)
 }

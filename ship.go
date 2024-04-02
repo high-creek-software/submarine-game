@@ -9,8 +9,8 @@ import (
 )
 
 type Ship struct {
-	Entity
-	shipSpeed     float32
+	*Entity
+	shipSpeed     float64
 	requestCharge func()
 
 	sprite *ebiten.Image
@@ -18,19 +18,22 @@ type Ship struct {
 	idleAnimation *display.AnimateComponent
 }
 
-func NewShip(requestCharge func()) *Ship {
+func NewShip() *Ship {
 	ship := &Ship{
-		Entity:        *NewEntity(40, 80, 150, 75),
-		shipSpeed:     5,
-		requestCharge: requestCharge,
+		Entity:    NewEntity(40, 80, 150, 75),
+		shipSpeed: 5,
 	}
 
 	//ship.sprite = assetLoader.MustLoadImage("assets/ship/0.png")
 
-	idleShip := assetLoader.LoadConcurrentDirectory("assets/ship", "png", 3)
+	idleShip := assetLoader.LoadConcurrentDirectory("assets/ship", "png", 4)
 	ship.idleAnimation = display.NewAnimateComponent(ship, 3, idleShip)
 
 	return ship
+}
+
+func (s *Ship) UpdateForLevel(requestCharge func()) {
+	s.requestCharge = requestCharge
 }
 
 func (s *Ship) Update() error {
@@ -41,7 +44,7 @@ func (s *Ship) Update() error {
 }
 
 func (s *Ship) move() {
-	var move float32
+	var move float64
 
 	// Movement input
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) {

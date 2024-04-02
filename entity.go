@@ -3,12 +3,12 @@ package main
 import "github.com/quartercastle/vector"
 
 type Entity struct {
-	X, Y          float32
-	Width, Height float32
+	X, Y          float64
+	Width, Height float64
 	IsActive      bool
 }
 
-func NewEntity(x, y, width, height float32) *Entity {
+func NewEntity(x, y, width, height float64) *Entity {
 	return &Entity{
 		X:        x,
 		Y:        y,
