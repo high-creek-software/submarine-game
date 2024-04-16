@@ -1,8 +1,12 @@
 package main
 
 import (
+	"github.com/hajimehoshi/ebiten/v2/vector"
+	"gitlab.com/high-creek-software/go2d/components/debug"
 	"gitlab.com/high-creek-software/go2d/components/display"
+	"golang.org/x/image/colornames"
 	"slices"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -11,28 +15,39 @@ import (
 type Ship struct {
 	*Entity
 	shipSpeed     float64
-	requestCharge func()
+	requestCharge func(isFront bool)
 
-	sprite *ebiten.Image
+	sprite          *ebiten.Image
+	hitboxComponent *debug.HitBoxDrawComponent
 
+	maxHealth     float64
+	health        float64
 	idleAnimation *display.AnimateComponent
+
+	lastFire time.Time
+	cooldown time.Duration
 }
 
 func NewShip() *Ship {
 	ship := &Ship{
-		Entity:    NewEntity(40, 80, 150, 75),
-		shipSpeed: 5,
+		Entity:    NewEntity(40, 105, 128, 40),
+		shipSpeed: 3,
+		maxHealth: 6,
+		health:    6,
+		cooldown:  800 * time.Millisecond,
 	}
 
 	//ship.sprite = assetLoader.MustLoadImage("assets/ship/0.png")
 
-	idleShip := assetLoader.LoadConcurrentDirectory("assets/ship", "png", 4)
+	idleShip := assetLoader.LoadConcurrentDirectory("assets/ship2", "png", 4)
 	ship.idleAnimation = display.NewAnimateComponent(ship, 3, idleShip)
+
+	ship.hitboxComponent = debug.NewHitBoxDrawComponent(ship, false, ship.Width, ship.Height)
 
 	return ship
 }
 
-func (s *Ship) UpdateForLevel(requestCharge func()) {
+func (s *Ship) UpdateForLevel(requestCharge func(isFront bool)) {
 	s.requestCharge = requestCharge
 }
 
@@ -67,12 +82,21 @@ func (s *Ship) move() {
 }
 
 func (s *Ship) fire() {
+	now := time.Now()
+	//if now.Sub(s.lastFire) > s.cooldown {
 	keys := inpututil.AppendJustPressedKeys(nil)
 	if slices.Contains(keys, ebiten.KeySpace) {
-		s.requestCharge()
+		s.requestCharge(false)
 		// Deploy a depth charge
 		// Pass methods to this struct to request fire
+	} else if slices.Contains(keys, ebiten.KeyA) {
+		s.requestCharge(false)
+	} else if slices.Contains(keys, ebiten.KeyD) {
+		s.requestCharge(true)
 	}
+
+	s.lastFire = now
+	//}
 }
 
 func (s *Ship) Draw(screen *ebiten.Image) {
@@ -83,6 +107,17 @@ func (s *Ship) Draw(screen *ebiten.Image) {
 	opts.GeoM.Translate(float64(s.X), float64(s.Y))
 	screen.DrawImage(s.sprite, opts)*/
 	s.idleAnimation.Draw(screen, 0, 0)
+	//s.hitboxComponent.Draw(screen, 0, 0)
+
+	maxWidth := float32(300.0)
+	vector.DrawFilledRect(screen, 50, 15, maxWidth, 15, colornames.Red, true)
+	healthRatio := s.health / s.maxHealth
+	currentHealthWidth := maxWidth * float32(healthRatio)
+	vector.DrawFilledRect(screen, 50, 15, currentHealthWidth, 15, colornames.Green, true)
+}
+
+func (s *Ship) WasHit() {
+	s.health -= 1
 }
 
 func (s *Ship) Scale() (float64, float64) {

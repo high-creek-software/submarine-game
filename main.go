@@ -12,6 +12,7 @@ import (
 const (
 	SCREEN_WIDTH  = 1280
 	SCREEN_HEIGHT = 720
+	WATER_SURFACE = 140
 )
 
 type Game struct {

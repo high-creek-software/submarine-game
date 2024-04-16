@@ -2,19 +2,22 @@ package main
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/vector"
-	"golang.org/x/image/colornames"
 )
 
 type DepthCharge struct {
 	*Entity
 	gravity float64
+
+	sprite *ebiten.Image
 }
 
 func NewDepthCharge(x, y float64) *DepthCharge {
+
+	sprite := assetLoader.MustLoadImage("assets/depthcharge/idle/0.png")
 	return &DepthCharge{
-		Entity:  NewEntity(x, y, 20, 20),
+		Entity:  NewEntity(x, y, 20, 20).SetCentered(),
 		gravity: 3,
+		sprite:  sprite,
 	}
 }
 
@@ -32,5 +35,10 @@ func (dc *DepthCharge) Update() error {
 }
 
 func (dc *DepthCharge) Draw(screen *ebiten.Image) {
-	vector.DrawFilledRect(screen, float32(dc.X), float32(dc.Y), float32(dc.Width), float32(dc.Height), colornames.Purple, true)
+	//vector.DrawFilledRect(screen, float32(dc.X), float32(dc.Y), float32(dc.Width), float32(dc.Height), colornames.Purple, true)
+	opts := &ebiten.DrawImageOptions{}
+	opts.GeoM.Translate(-(dc.Width / 2), -(dc.Height / 2))
+
+	opts.GeoM.Translate(dc.X, dc.Y)
+	screen.DrawImage(dc.sprite, opts)
 }

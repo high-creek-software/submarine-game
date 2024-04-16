@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
-	"math/rand"
+	"math/rand/v2"
+	"time"
 )
 
 type Submarine struct {
@@ -10,6 +12,9 @@ type Submarine struct {
 	subSpeed          float64
 	requestTorpedo    func(sub *Submarine)
 	horizontalFlipped bool
+
+	lastFire time.Time
+	cooldown time.Duration
 
 	sprite *ebiten.Image
 }
@@ -20,18 +25,18 @@ func NewSubmarine(requestTorpedo func(sub *Submarine)) *Submarine {
 
 	// Height groups: 200-320, 320-500, 500-720
 
-	layer := rand.Intn(3)
+	layer := rand.IntN(3)
 	var y float64
 	switch layer {
 	case 0:
-		y = float64(200 + rand.Intn(120))
+		y = float64(200 + rand.IntN(120))
 	case 1:
-		y = float64(320 + rand.Intn(180))
+		y = float64(320 + rand.IntN(180))
 	case 2:
-		y = float64(500 + rand.Intn(220))
+		y = float64(500 + rand.IntN(220))
 	}
 
-	lane := rand.Intn(3)
+	lane := rand.IntN(3)
 
 	var x float64
 	switch lane {
@@ -43,11 +48,19 @@ func NewSubmarine(requestTorpedo func(sub *Submarine)) *Submarine {
 		x = SCREEN_WIDTH - 128/2
 	}
 
+	// Picking the milliseconds of cooldown
+	cooldownDuration := (1500 + rand.IntN(4500))
+	// Parsing the duration, and interval of time
+	cooldown, _ := time.ParseDuration(fmt.Sprintf("%dms", cooldownDuration))
+
 	img := assetLoader.MustLoadImage("assets/sub1/0.png")
 	sub := &Submarine{
-		Entity:   NewEntity(x, float64(y), 128, 25),
-		subSpeed: 2,
-		sprite:   img,
+		Entity:         NewEntity(x, float64(y), 128, 25).SetCentered(),
+		subSpeed:       2,
+		sprite:         img,
+		lastFire:       time.Now(),
+		cooldown:       cooldown,
+		requestTorpedo: requestTorpedo,
 	}
 
 	return sub
@@ -64,6 +77,12 @@ func (s *Submarine) Update() error {
 		s.horizontalFlipped = true
 	} else if s.X-s.Width/2 < 0 {
 		s.horizontalFlipped = false
+	}
+
+	now := time.Now()
+	if now.Sub(s.lastFire) > s.cooldown {
+		s.requestTorpedo(s)
+		s.lastFire = now
 	}
 
 	return nil

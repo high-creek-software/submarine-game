@@ -5,6 +5,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"golang.org/x/image/colornames"
 	"log/slog"
+	"sync"
 )
 
 type Level struct {
@@ -12,6 +13,7 @@ type Level struct {
 	ship         *Ship
 	depthCharges []*DepthCharge
 	submarines   []*Submarine
+	torpedoes    []*Torpedo
 
 	oceanImage *ebiten.Image
 }
@@ -46,10 +48,64 @@ func (l *Level) Update() error {
 	// Setting the active array back to the depthCharges
 	l.depthCharges = keepDepthCharges
 
+	var keepSubs []*Submarine
 	for _, sub := range l.submarines {
 		sub.Update()
+		if sub.IsActive {
+			keepSubs = append(keepSubs, sub)
+		}
 	}
+	l.submarines = keepSubs
 
+	var keepTorpedoes []*Torpedo
+	for _, torpedo := range l.torpedoes {
+		torpedo.Update()
+		if torpedo.IsActive {
+			keepTorpedoes = append(keepTorpedoes, torpedo)
+		}
+	}
+	l.torpedoes = keepTorpedoes
+
+	var wg sync.WaitGroup
+	wg.Add(3)
+	go func() {
+		// torpedo hits ship
+		for _, torpedo := range l.torpedoes {
+			if torpedo.Rect().AlignedCollides(l.ship.Rect()) {
+				torpedo.IsActive = false
+				l.ship.WasHit()
+			}
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		// depth charge hits a submarine
+		for _, dc := range l.depthCharges {
+			for _, sub := range l.submarines {
+				if dc.Rect().AlignedCollides(sub.Rect()) {
+					dc.IsActive = false
+					sub.IsActive = false
+				}
+			}
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		// depth charge hits a torpedo
+		for _, dc := range l.depthCharges {
+			for _, torpedo := range l.torpedoes {
+				if dc.Rect().AlignedCollides(torpedo.Rect()) {
+					torpedo.IsActive = false
+					dc.IsActive = false
+				}
+			}
+		}
+		wg.Done()
+	}()
+
+	wg.Wait()
 	return nil
 }
 
@@ -68,18 +124,27 @@ func (l *Level) Draw(screen *ebiten.Image) {
 		sub.Draw(screen)
 	}
 
+	for _, torpedo := range l.torpedoes {
+		torpedo.Draw(screen)
+	}
+
 	opts := &ebiten.DrawImageOptions{}
 	opts.ColorScale.ScaleAlpha(0.45)
-	opts.GeoM.Translate(0, 140)
+	opts.GeoM.Translate(0, WATER_SURFACE)
 	screen.DrawImage(l.oceanImage, opts)
 }
 
-func (l *Level) requestCharge() {
+func (l *Level) requestCharge(isFront bool) {
 	slog.Info("Fire requested")
+	x := l.ship.X
+	if isFront {
+		x += l.ship.Width
+	}
 	// Depth charge fired from where the ship
-	l.depthCharges = append(l.depthCharges, NewDepthCharge(l.ship.X, l.ship.Y))
+	l.depthCharges = append(l.depthCharges, NewDepthCharge(x, l.ship.Y+15))
 }
 
 func (l *Level) requestTorpedo(submarine *Submarine) {
-
+	torpedo := NewTorpedo(submarine.X, submarine.Y, 2)
+	l.torpedoes = append(l.torpedoes, torpedo)
 }
