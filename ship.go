@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"gitlab.com/high-creek-software/go2d/components/debug"
 	"gitlab.com/high-creek-software/go2d/components/display"
@@ -26,6 +28,8 @@ type Ship struct {
 
 	lastFire time.Time
 	cooldown time.Duration
+
+	score int64
 }
 
 func NewShip() *Ship {
@@ -81,22 +85,23 @@ func (s *Ship) move() {
 	s.X = moveX
 }
 
-func (s *Ship) fire() {
+func (s *Ship) internalFire(isFront bool) {
 	now := time.Now()
-	//if now.Sub(s.lastFire) > s.cooldown {
+	if now.Sub(s.lastFire) > s.cooldown {
+		s.requestCharge(isFront)
+		s.lastFire = now
+	}
+}
+
+func (s *Ship) fire() {
 	keys := inpututil.AppendJustPressedKeys(nil)
 	if slices.Contains(keys, ebiten.KeySpace) {
-		s.requestCharge(false)
-		// Deploy a depth charge
-		// Pass methods to this struct to request fire
+		s.internalFire(false)
 	} else if slices.Contains(keys, ebiten.KeyA) {
-		s.requestCharge(false)
+		s.internalFire(false)
 	} else if slices.Contains(keys, ebiten.KeyD) {
-		s.requestCharge(true)
+		s.internalFire(true)
 	}
-
-	s.lastFire = now
-	//}
 }
 
 func (s *Ship) Draw(screen *ebiten.Image) {
@@ -114,6 +119,12 @@ func (s *Ship) Draw(screen *ebiten.Image) {
 	healthRatio := s.health / s.maxHealth
 	currentHealthWidth := maxWidth * float32(healthRatio)
 	vector.DrawFilledRect(screen, 50, 15, currentHealthWidth, 15, colornames.Green, true)
+
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", s.score), 400, 20)
+}
+
+func (s *Ship) incrementScore(delta int64) {
+	s.score += delta
 }
 
 func (s *Ship) WasHit() {

@@ -8,19 +8,26 @@ import (
 	"sync"
 )
 
+type LevelInteractor interface {
+	GameOver()
+	PlaySound(soundType SoundType)
+}
+
 type Level struct {
 	index        int
 	ship         *Ship
 	depthCharges []*DepthCharge
 	submarines   []*Submarine
 	torpedoes    []*Torpedo
+	interactor   LevelInteractor
 
 	oceanImage *ebiten.Image
 }
 
-func NewLevel(index int, ship *Ship) *Level {
+func NewLevel(interactor LevelInteractor, index int, ship *Ship) *Level {
 	oceanImg := assetLoader.MustLoadImage("assets/ocean.png")
 	level := &Level{
+		interactor: interactor,
 		index:      index,
 		ship:       ship,
 		oceanImage: ebiten.NewImageFromImage(oceanImg),
@@ -74,6 +81,7 @@ func (l *Level) Update() error {
 			if torpedo.Rect().AlignedCollides(l.ship.Rect()) {
 				torpedo.IsActive = false
 				l.ship.WasHit()
+				l.interactor.PlaySound(SOUNDS_HIT)
 			}
 		}
 		wg.Done()
@@ -86,6 +94,8 @@ func (l *Level) Update() error {
 				if dc.Rect().AlignedCollides(sub.Rect()) {
 					dc.IsActive = false
 					sub.IsActive = false
+					l.interactor.PlaySound(SOUNDS_EXP_UNDERWATER)
+					l.ship.incrementScore(250)
 				}
 			}
 		}
@@ -99,6 +109,7 @@ func (l *Level) Update() error {
 				if dc.Rect().AlignedCollides(torpedo.Rect()) {
 					torpedo.IsActive = false
 					dc.IsActive = false
+					l.ship.incrementScore(125)
 				}
 			}
 		}
@@ -106,6 +117,11 @@ func (l *Level) Update() error {
 	}()
 
 	wg.Wait()
+
+	// Are we still alive
+	if l.ship.health < 0 {
+		l.interactor.GameOver()
+	}
 	return nil
 }
 
@@ -142,9 +158,11 @@ func (l *Level) requestCharge(isFront bool) {
 	}
 	// Depth charge fired from where the ship
 	l.depthCharges = append(l.depthCharges, NewDepthCharge(x, l.ship.Y+15))
+	l.interactor.PlaySound(SOUNDS_SPLASH)
 }
 
 func (l *Level) requestTorpedo(submarine *Submarine) {
 	torpedo := NewTorpedo(submarine.X, submarine.Y, 2)
 	l.torpedoes = append(l.torpedoes, torpedo)
+	l.interactor.PlaySound(SOUNDS_MISSLE)
 }

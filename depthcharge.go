@@ -16,7 +16,7 @@ func NewDepthCharge(x, y float64) *DepthCharge {
 	sprite := assetLoader.MustLoadImage("assets/depthcharge/idle/0.png")
 	return &DepthCharge{
 		Entity:  NewEntity(x, y, 20, 20).SetCentered(),
-		gravity: 3,
+		gravity: 1.5,
 		sprite:  sprite,
 	}
 }
