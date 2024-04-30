@@ -1,15 +1,21 @@
 package main
 
 import (
+	"bytes"
 	"embed"
 	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/mp3"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"gitlab.com/high-creek-software/go2d/loader"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	_ "image/png"
 	"log/slog"
+	"os"
 )
 
 const (
@@ -27,6 +33,9 @@ const (
 	SOUNDS_EXP_UNDERWATER
 	SOUNDS_MISSLE
 )
+
+var mplusFaceSource *text.GoTextFaceSource
+var gamePrinter *message.Printer
 
 type Game struct {
 	ship               *Ship
@@ -76,12 +85,22 @@ func (g *Game) Layout(ow, oh int) (w, h int) {
 
 func (g *Game) GameStarted() {
 	g.ship = NewShip()
-	g.level = NewLevel(g, 5, g.ship)
+	g.newLevel()
+}
+
+func (g *Game) LevelComplete() {
+	g.newLevel()
+}
+
+func (g *Game) newLevel() {
+	g.level = NewLevel(g, g.levelIndex, g.ship)
+	g.levelIndex += 1
 }
 
 func (g *Game) GameOver() {
 	g.level = nil
 	g.gameOverScreen = NewGameOverScreen(g.GameStarted)
+	g.levelIndex = 0
 }
 
 func (g *Game) PlaySound(soundType SoundType) {
@@ -129,6 +148,7 @@ func (g *Game) initializeSounds() {
 	if err != nil {
 		slog.Info("error creating hit", "error", err)
 	}
+
 }
 
 func (g *Game) createAudioPlayer(path string) (*audio.Player, error) {
@@ -150,6 +170,15 @@ var assetLoader *loader.AssetLoader
 
 func main() {
 	assetLoader = loader.NewAssetLoader(assets)
+
+	var err error
+	mplusFaceSource, err = text.NewGoTextFaceSource(bytes.NewReader(fonts.MPlus1pRegular_ttf))
+	if err != nil {
+		slog.Error("error loading font", "error", err)
+		os.Exit(2)
+	}
+
+	gamePrinter = message.NewPrinter(language.English)
 
 	subGame := &Game{}
 	subGame.initializeSounds()

@@ -2,24 +2,36 @@ package main
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"golang.org/x/image/colornames"
 	"log/slog"
 	"sync"
 )
 
+const (
+	MaxSubsOnScreen = 5
+)
+
+/*type Attacker interface {
+	Update() error
+	Draw(screen *ebiten.Image)
+}*/
+
 type LevelInteractor interface {
 	GameOver()
 	PlaySound(soundType SoundType)
+	LevelComplete()
 }
 
 type Level struct {
-	index        int
-	ship         *Ship
-	depthCharges []*DepthCharge
-	submarines   []*Submarine
-	torpedoes    []*Torpedo
-	interactor   LevelInteractor
+	index             int
+	destroyedSubCount int
+	ship              *Ship
+	depthCharges      []*DepthCharge
+	submarines        []*Submarine
+	torpedoes         []*Torpedo
+	interactor        LevelInteractor
 
 	oceanImage *ebiten.Image
 }
@@ -34,7 +46,11 @@ func NewLevel(interactor LevelInteractor, index int, ship *Ship) *Level {
 	}
 	ship.UpdateForLevel(level.requestCharge)
 
-	for idx := 0; idx < index+1; idx++ {
+	startSubs := index
+	if index > MaxSubsOnScreen {
+		startSubs = MaxSubsOnScreen
+	}
+	for idx := 0; idx < startSubs; idx++ {
 		level.submarines = append(level.submarines, NewSubmarine(level.requestTorpedo))
 	}
 
@@ -60,9 +76,23 @@ func (l *Level) Update() error {
 		sub.Update()
 		if sub.IsActive {
 			keepSubs = append(keepSubs, sub)
+		} else {
+			l.destroyedSubCount += 1
+
+			if l.index > MaxSubsOnScreen {
+				if l.destroyedSubCount+MaxSubsOnScreen < l.index {
+					keepSubs = append(keepSubs, SpawnSub(l.requestTorpedo))
+				}
+			}
 		}
 	}
 	l.submarines = keepSubs
+
+	if len(l.submarines) == 0 {
+		// Finish the level
+		l.interactor.LevelComplete()
+		return nil
+	}
 
 	var keepTorpedoes []*Torpedo
 	for _, torpedo := range l.torpedoes {
@@ -131,7 +161,6 @@ func (l *Level) Draw(screen *ebiten.Image) {
 
 	l.ship.Draw(screen)
 	// Iteration type of loop
-	slog.Info("Depth Charges", "length", len(l.depthCharges))
 	for _, depthCharge := range l.depthCharges {
 		depthCharge.Draw(screen)
 	}
@@ -148,6 +177,18 @@ func (l *Level) Draw(screen *ebiten.Image) {
 	opts.ColorScale.ScaleAlpha(0.45)
 	opts.GeoM.Translate(0, WATER_SURFACE)
 	screen.DrawImage(l.oceanImage, opts)
+
+	txtOpts := &text.DrawOptions{}
+	txtOpts.GeoM.Translate(900, 10)
+	txtOpts.ColorScale.ScaleWithColor(colornames.Black)
+	levelStr := gamePrinter.Sprintf("Level: %d", l.index)
+	//text.Measure()
+	text.Draw(screen, levelStr, &text.GoTextFace{
+		Source: mplusFaceSource,
+		Size:   18,
+	},
+		txtOpts,
+	)
 }
 
 func (l *Level) requestCharge(isFront bool) {

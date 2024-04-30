@@ -4,7 +4,7 @@
 [x] Start screen
 [x] Game over screen
 [x] Play audio
-[ ] Keep score
-[ ] Change levels
+[x] Keep score
+[x] Change levels
 [ ] Manage level complexity
 [ ] Explosion particles

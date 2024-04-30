@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"gitlab.com/high-creek-software/go2d/components/debug"
 	"gitlab.com/high-creek-software/go2d/components/display"
@@ -108,9 +107,6 @@ func (s *Ship) Draw(screen *ebiten.Image) {
 	// Ship
 	//vector.DrawFilledRect(screen, s.X, s.Y, s.Width, s.Height, colornames.Orange, true)
 
-	/*opts := &ebiten.DrawImageOptions{}
-	opts.GeoM.Translate(float64(s.X), float64(s.Y))
-	screen.DrawImage(s.sprite, opts)*/
 	s.idleAnimation.Draw(screen, 0, 0)
 	//s.hitboxComponent.Draw(screen, 0, 0)
 
@@ -120,7 +116,15 @@ func (s *Ship) Draw(screen *ebiten.Image) {
 	currentHealthWidth := maxWidth * float32(healthRatio)
 	vector.DrawFilledRect(screen, 50, 15, currentHealthWidth, 15, colornames.Green, true)
 
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", s.score), 400, 20)
+	//ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%d", s.score), 400, 20)
+	txtOpts := &text.DrawOptions{}
+	txtOpts.GeoM.Translate(400, 10)
+	txtOpts.ColorScale.ScaleWithColor(colornames.Black)
+	text.Draw(screen,
+		gamePrinter.Sprintf("%d", s.score),
+		&text.GoTextFace{Source: mplusFaceSource, Size: 18},
+		txtOpts,
+	)
 }
 
 func (s *Ship) incrementScore(delta int64) {

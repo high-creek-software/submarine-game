@@ -7,6 +7,24 @@ import (
 	"time"
 )
 
+type RedOctober struct {
+	*Submarine
+}
+
+func (r *RedOctober) Update() error {
+	r.Submarine.Update()
+
+	// Random call
+	// Crazy Ivan
+	crazy := rand.IntN(100)%55 == 0
+	// change direction
+	if crazy {
+		r.horizontalFlipped = true
+	}
+
+	return nil
+}
+
 type Submarine struct {
 	*Entity
 	subSpeed          float64
@@ -25,16 +43,7 @@ func NewSubmarine(requestTorpedo func(sub *Submarine)) *Submarine {
 
 	// Height groups: 200-320, 320-500, 500-720
 
-	layer := rand.IntN(3)
-	var y float64
-	switch layer {
-	case 0:
-		y = float64(200 + rand.IntN(120))
-	case 1:
-		y = float64(320 + rand.IntN(180))
-	case 2:
-		y = float64(500 + rand.IntN(220))
-	}
+	y := pickLayer()
 
 	lane := rand.IntN(3)
 
@@ -66,6 +75,50 @@ func NewSubmarine(requestTorpedo func(sub *Submarine)) *Submarine {
 	return sub
 }
 
+func SpawnSub(requestTorpedo func(sub *Submarine)) *Submarine {
+	y := pickLayer()
+	img := assetLoader.MustLoadImage("assets/sub1/0.png")
+	// Picking the milliseconds of cooldown
+	cooldownDuration := (1500 + rand.IntN(2500))
+	// Parsing the duration, and interval of time
+	cooldown, _ := time.ParseDuration(fmt.Sprintf("%dms", cooldownDuration))
+
+	horizontalFlipped := false
+	x := -128
+
+	if rand.IntN(100)%2 == 0 {
+		horizontalFlipped = true
+		x = SCREEN_WIDTH + 128
+	}
+
+	sub := &Submarine{
+		Entity:            NewEntity(float64(x), float64(y), 128, 25).SetCentered(),
+		subSpeed:          3,
+		sprite:            img,
+		lastFire:          time.Now(),
+		cooldown:          cooldown,
+		requestTorpedo:    requestTorpedo,
+		horizontalFlipped: horizontalFlipped,
+	}
+
+	return sub
+}
+
+func pickLayer() float64 {
+	layer := rand.IntN(3)
+	var y float64
+	switch layer {
+	case 0:
+		y = float64(200 + rand.IntN(120))
+	case 1:
+		y = float64(320 + rand.IntN(180))
+	case 2:
+		y = float64(500 + rand.IntN(220))
+	}
+
+	return y
+}
+
 func (s *Submarine) Update() error {
 	speedModifier := 1
 	if s.horizontalFlipped {
@@ -73,9 +126,9 @@ func (s *Submarine) Update() error {
 	}
 	s.X = s.X + s.subSpeed*float64(speedModifier)
 
-	if s.X+s.Width/2 > SCREEN_WIDTH {
+	if s.X > SCREEN_WIDTH {
 		s.horizontalFlipped = true
-	} else if s.X-s.Width/2 < 0 {
+	} else if s.X < 0 {
 		s.horizontalFlipped = false
 	}
 
