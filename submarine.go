@@ -88,7 +88,7 @@ func SpawnSub(requestTorpedo func(sub *Submarine)) *Submarine {
 
 	if rand.IntN(100)%2 == 0 {
 		horizontalFlipped = true
-		x = SCREEN_WIDTH + 128
+		x = int(SCREEN_WIDTH + 128)
 	}
 
 	sub := &Submarine{
@@ -107,13 +107,16 @@ func SpawnSub(requestTorpedo func(sub *Submarine)) *Submarine {
 func pickLayer() float64 {
 	layer := rand.IntN(3)
 	var y float64
+
+	third := (SCREEN_HEIGHT - WATER_SURFACE) / 3
+
 	switch layer {
 	case 0:
-		y = float64(200 + rand.IntN(120))
+		y = WATER_SURFACE + float64(rand.IntN(int(third-50)))
 	case 1:
-		y = float64(320 + rand.IntN(180))
+		y = third + float64(rand.IntN(int(third-50)))
 	case 2:
-		y = float64(500 + rand.IntN(220))
+		y = third*2 + float64(rand.IntN(int(third-50)))
 	}
 
 	return y

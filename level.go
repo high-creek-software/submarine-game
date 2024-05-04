@@ -3,10 +3,10 @@ package main
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 	"golang.org/x/image/colornames"
 	"log/slog"
 	"sync"
+	"time"
 )
 
 const (
@@ -37,7 +37,7 @@ type Level struct {
 }
 
 func NewLevel(interactor LevelInteractor, index int, ship *Ship) *Level {
-	oceanImg := assetLoader.MustLoadImage("assets/ocean.png")
+	oceanImg := assetLoader.MustLoadImage("assets/big_ocean.png")
 	level := &Level{
 		interactor: interactor,
 		index:      index,
@@ -58,6 +58,7 @@ func NewLevel(interactor LevelInteractor, index int, ship *Ship) *Level {
 }
 
 func (l *Level) Update() error {
+	start := time.Now()
 	l.ship.Update()
 
 	// This is the new array for active depth charges
@@ -80,7 +81,7 @@ func (l *Level) Update() error {
 			l.destroyedSubCount += 1
 
 			if l.index > MaxSubsOnScreen {
-				if l.destroyedSubCount+MaxSubsOnScreen < l.index {
+				if l.destroyedSubCount+MaxSubsOnScreen <= l.index {
 					keepSubs = append(keepSubs, SpawnSub(l.requestTorpedo))
 				}
 			}
@@ -152,12 +153,19 @@ func (l *Level) Update() error {
 	if l.ship.health < 0 {
 		l.interactor.GameOver()
 	}
+
+	slog.Info("Update Duration", "duration", time.Now().Sub(start))
+
 	return nil
 }
 
 func (l *Level) Draw(screen *ebiten.Image) {
 	// Background
-	vector.DrawFilledRect(screen, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, colornames.Aliceblue, true)
+	screen.Fill(colornames.Aliceblue)
+
+	// 006680ff
+	//clr := color.NRGBA{52, 91, 235, 128}
+	//vector.DrawFilledRect(screen, 0, float32(WATER_SURFACE), float32(SCREEN_WIDTH), float32(SCREEN_HEIGHT-WATER_SURFACE), clr, true)
 
 	l.ship.Draw(screen)
 	// Iteration type of loop
@@ -173,20 +181,27 @@ func (l *Level) Draw(screen *ebiten.Image) {
 		torpedo.Draw(screen)
 	}
 
+	// Drawing ocean
 	opts := &ebiten.DrawImageOptions{}
 	opts.ColorScale.ScaleAlpha(0.45)
 	opts.GeoM.Translate(0, WATER_SURFACE)
 	screen.DrawImage(l.oceanImage, opts)
 
-	txtOpts := &text.DrawOptions{}
-	txtOpts.GeoM.Translate(900, 10)
-	txtOpts.ColorScale.ScaleWithColor(colornames.Black)
+	// Drawing level screen
 	levelStr := gamePrinter.Sprintf("Level: %d", l.index)
-	//text.Measure()
-	text.Draw(screen, levelStr, &text.GoTextFace{
+	face := &text.GoTextFace{
 		Source: mplusFaceSource,
 		Size:   18,
-	},
+	}
+	width, _ := text.Measure(levelStr, face, 1)
+	txtOpts := &text.DrawOptions{}
+	txtOpts.GeoM.Translate(SCREEN_WIDTH-width-50, 10)
+	txtOpts.ColorScale.ScaleWithColor(colornames.Black)
+	//text.Measure()
+	text.Draw(
+		screen,
+		levelStr,
+		face,
 		txtOpts,
 	)
 }

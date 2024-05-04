@@ -18,11 +18,9 @@ import (
 	"os"
 )
 
-const (
-	SCREEN_WIDTH  = 1280
-	SCREEN_HEIGHT = 720
-	WATER_SURFACE = 140
-)
+var SCREEN_WIDTH = 1280.0
+var SCREEN_HEIGHT = 720.0
+var WATER_SURFACE = 140.0
 
 type SoundType int
 
@@ -79,8 +77,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(ow, oh int) (w, h int) {
-
-	return SCREEN_WIDTH, SCREEN_HEIGHT
+	SCREEN_WIDTH = float64(ow)
+	SCREEN_HEIGHT = float64(oh)
+	return ow, oh
 }
 
 func (g *Game) GameStarted() {
@@ -135,18 +134,26 @@ func (g *Game) initializeSounds() {
 	g.splashSound, err = g.createAudioPlayer("assets/sounds/splash.mp3")
 	if err != nil {
 		slog.Info("error creating splash", "error", err)
+	} else {
+		g.splashSound.SetVolume(0.33)
 	}
 	g.expUnderwater, err = g.createAudioPlayer("assets/sounds/exp_underwater.mp3")
 	if err != nil {
 		slog.Info("error creating underwater explosion", "error", err)
+	} else {
+		g.expUnderwater.SetVolume(0.22)
 	}
 	g.missle, err = g.createAudioPlayer("assets/sounds/missle.mp3")
 	if err != nil {
 		slog.Info("error creating missle", "error", err)
+	} else {
+		g.missle.SetVolume(0.33)
 	}
 	g.hit, err = g.createAudioPlayer("assets/sounds/hit.mp3")
 	if err != nil {
 		slog.Info("error creating hit", "error", err)
+	} else {
+		g.hit.SetVolume(0.22)
 	}
 
 }
@@ -188,6 +195,7 @@ func main() {
 
 	ebiten.SetWindowSize(1280, 720)
 	ebiten.SetWindowTitle("Submarine Game")
+	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 
 	ebiten.RunGame(subGame)
 }

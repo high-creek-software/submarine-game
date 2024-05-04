@@ -28,6 +28,6 @@ func (s *StartScreen) Update() error {
 }
 
 func (s *StartScreen) Draw(screen *ebiten.Image) {
-	vector.DrawFilledRect(screen, 0.0, 0.0, SCREEN_WIDTH, SCREEN_HEIGHT, colornames.Lightblue, true)
-	ebitenutil.DebugPrintAt(screen, "Press Enter To Start", SCREEN_WIDTH/2-100, SCREEN_HEIGHT/2-10)
+	vector.DrawFilledRect(screen, 0.0, 0.0, float32(SCREEN_WIDTH), float32(SCREEN_HEIGHT), colornames.Lightblue, true)
+	ebitenutil.DebugPrintAt(screen, "Press Enter To Start", int(SCREEN_WIDTH/2-100), int(SCREEN_HEIGHT/2-10))
 }
