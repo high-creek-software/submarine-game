@@ -1,4 +1,4 @@
-package main
+package submarinegame
 
 import (
 	"fmt"
@@ -77,7 +77,7 @@ func NewSubmarine(requestTorpedo func(sub *Submarine)) *Submarine {
 
 func SpawnSub(requestTorpedo func(sub *Submarine)) *Submarine {
 	y := pickLayer()
-	img := assetLoader.MustLoadImage("assets/sub1/0.png")
+	img := assetLoader.MustLoadImage("assets/sub2/0.png")
 	// Picking the milliseconds of cooldown
 	cooldownDuration := (1500 + rand.IntN(2500))
 	// Parsing the duration, and interval of time
@@ -112,7 +112,7 @@ func pickLayer() float64 {
 
 	switch layer {
 	case 0:
-		y = WATER_SURFACE + float64(rand.IntN(int(third-50)))
+		y = WATER_SURFACE + 25 + float64(rand.IntN(int(third-50)))
 	case 1:
 		y = third + float64(rand.IntN(int(third-50)))
 	case 2:

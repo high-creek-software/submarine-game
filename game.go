@@ -1,4 +1,4 @@
-package main
+package submarinegame
 
 import (
 	"bytes"
@@ -13,9 +13,9 @@ import (
 	"gitlab.com/high-creek-software/go2d/loader"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	_ "image/png"
 	"log/slog"
 	"os"
+	"time"
 )
 
 var SCREEN_WIDTH = 1280.0
@@ -30,16 +30,22 @@ const (
 	SOUNDS_HIT
 	SOUNDS_EXP_UNDERWATER
 	SOUNDS_MISSLE
+	SOUNDS_PING
 )
 
 var mplusFaceSource *text.GoTextFaceSource
 var gamePrinter *message.Printer
+
+//go:embed assets
+var assets embed.FS
+var assetLoader *loader.AssetLoader
 
 type Game struct {
 	ship               *Ship
 	levelIndex         int
 	level              *Level
 	startScreen        *StartScreen
+	startUI            *StartUI
 	gameOverScreen     *GameOverScreen
 	pointerX, pointerY int
 
@@ -48,6 +54,19 @@ type Game struct {
 	expUnderwater *audio.Player
 	missle        *audio.Player
 	hit           *audio.Player
+	ping          *audio.Player
+}
+
+func NewGame() *Game {
+	subGame := &Game{}
+	subGame.initializeLoader()
+	subGame.initializeUIComponents()
+	subGame.initializeSounds()
+
+	subGame.startScreen = NewStartScreen(subGame.GameStarted)
+	//subGame.startUI = NewStartUI()
+
+	return subGame
 }
 
 func (g *Game) Update() error {
@@ -57,6 +76,8 @@ func (g *Game) Update() error {
 		g.gameOverScreen.Update()
 	} else if g.startScreen != nil {
 		g.startScreen.Update()
+	} else if g.startUI != nil {
+		g.startUI.Update()
 	}
 
 	g.pointerX, g.pointerY = ebiten.CursorPosition()
@@ -71,6 +92,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		g.gameOverScreen.Draw(screen)
 	} else if g.startScreen != nil {
 		g.startScreen.Draw(screen)
+	} else if g.startUI != nil {
+		g.startUI.Draw(screen)
 	}
 
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("%d, %d", g.pointerX, g.pointerY))
@@ -82,9 +105,14 @@ func (g *Game) Layout(ow, oh int) (w, h int) {
 	return ow, oh
 }
 
-func (g *Game) GameStarted() {
-	g.ship = NewShip()
+func (g *Game) GameStarted(shipType ShipType) {
+	g.ship = NewShip(shipType)
 	g.newLevel()
+}
+
+func (g *Game) Restart() {
+	g.gameOverScreen = nil
+	g.startScreen = NewStartScreen(g.GameStarted)
 }
 
 func (g *Game) LevelComplete() {
@@ -98,7 +126,7 @@ func (g *Game) newLevel() {
 
 func (g *Game) GameOver() {
 	g.level = nil
-	g.gameOverScreen = NewGameOverScreen(g.GameStarted)
+	g.gameOverScreen = NewGameOverScreen(g.Restart)
 	g.levelIndex = 0
 }
 
@@ -124,7 +152,34 @@ func (g *Game) PlaySound(soundType SoundType) {
 			g.hit.Rewind()
 			g.hit.Play()
 		}
+	case SOUNDS_PING:
+		if g.ping != nil {
+			g.ping.Rewind()
+			g.ping.Play()
+		}
 	}
+}
+
+func (g *Game) PlaySoundDelay(soundType SoundType, delay time.Duration) {
+	go func() {
+		<-time.Tick(delay)
+		g.PlaySound(soundType)
+	}()
+}
+
+func (g *Game) initializeUIComponents() {
+	var err error
+	mplusFaceSource, err = text.NewGoTextFaceSource(bytes.NewReader(fonts.MPlus1pRegular_ttf))
+	if err != nil {
+		slog.Error("error loading font", "error", err)
+		os.Exit(2)
+	}
+
+	gamePrinter = message.NewPrinter(language.English)
+}
+
+func (g *Game) initializeLoader() {
+	assetLoader = loader.NewAssetLoader(assets)
 }
 
 func (g *Game) initializeSounds() {
@@ -139,7 +194,7 @@ func (g *Game) initializeSounds() {
 	}
 	g.expUnderwater, err = g.createAudioPlayer("assets/sounds/exp_underwater.mp3")
 	if err != nil {
-		slog.Info("error creating underwater explosion", "error", err)
+		slog.Info("error creating underwater subexplosion", "error", err)
 	} else {
 		g.expUnderwater.SetVolume(0.22)
 	}
@@ -155,6 +210,12 @@ func (g *Game) initializeSounds() {
 	} else {
 		g.hit.SetVolume(0.22)
 	}
+	g.ping, err = g.createAudioPlayer("assets/sounds/ping.mp3")
+	if err != nil {
+		slog.Info("error creating ping", "error", err)
+	} else {
+		g.ping.SetVolume(0.22)
+	}
 
 }
 
@@ -168,34 +229,4 @@ func (g *Game) createAudioPlayer(path string) (*audio.Player, error) {
 	} else {
 		return nil, err
 	}
-}
-
-//go:embed assets
-var assets embed.FS
-
-var assetLoader *loader.AssetLoader
-
-func main() {
-	assetLoader = loader.NewAssetLoader(assets)
-
-	var err error
-	mplusFaceSource, err = text.NewGoTextFaceSource(bytes.NewReader(fonts.MPlus1pRegular_ttf))
-	if err != nil {
-		slog.Error("error loading font", "error", err)
-		os.Exit(2)
-	}
-
-	gamePrinter = message.NewPrinter(language.English)
-
-	subGame := &Game{}
-	subGame.initializeSounds()
-
-	//subGame.level = NewLevel(5, subGame.ship)
-	subGame.startScreen = NewStartScreen(subGame.GameStarted)
-
-	ebiten.SetWindowSize(1280, 720)
-	ebiten.SetWindowTitle("Submarine Game")
-	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-
-	ebiten.RunGame(subGame)
 }

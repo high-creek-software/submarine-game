@@ -1,4 +1,4 @@
-package main
+package submarinegame
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
@@ -10,19 +10,19 @@ import (
 )
 
 type GameOverScreen struct {
-	gameStarted func()
+	restart func()
 }
 
-func NewGameOverScreen(gameStarted func()) *GameOverScreen {
+func NewGameOverScreen(restart func()) *GameOverScreen {
 	return &GameOverScreen{
-		gameStarted: gameStarted,
+		restart: restart,
 	}
 }
 
 func (g *GameOverScreen) Update() error {
 	keys := inpututil.AppendJustPressedKeys(nil)
 	if slices.Contains(keys, ebiten.KeyEnter) {
-		g.gameStarted()
+		g.restart()
 	}
 	return nil
 }

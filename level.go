@@ -1,4 +1,4 @@
-package main
+package submarinegame
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
@@ -21,6 +21,7 @@ const (
 type LevelInteractor interface {
 	GameOver()
 	PlaySound(soundType SoundType)
+	PlaySoundDelay(soundType SoundType, delay time.Duration)
 	LevelComplete()
 }
 
@@ -32,6 +33,7 @@ type Level struct {
 	submarines        []*Submarine
 	torpedoes         []*Torpedo
 	interactor        LevelInteractor
+	particles         []*Particle
 
 	oceanImage *ebiten.Image
 }
@@ -83,13 +85,14 @@ func (l *Level) Update() error {
 			if l.index > MaxSubsOnScreen {
 				if l.destroyedSubCount+MaxSubsOnScreen <= l.index {
 					keepSubs = append(keepSubs, SpawnSub(l.requestTorpedo))
+					l.interactor.PlaySoundDelay(SOUNDS_PING, 1500*time.Millisecond)
 				}
 			}
 		}
 	}
 	l.submarines = keepSubs
 
-	if len(l.submarines) == 0 {
+	if len(l.submarines) == 0 && len(l.particles) == 0 {
 		// Finish the level
 		l.interactor.LevelComplete()
 		return nil
@@ -104,6 +107,15 @@ func (l *Level) Update() error {
 	}
 	l.torpedoes = keepTorpedoes
 
+	var keepParticles []*Particle
+	for _, particle := range l.particles {
+		particle.Update()
+		if particle.IsActive {
+			keepParticles = append(keepParticles, particle)
+		}
+	}
+	l.particles = keepParticles
+
 	var wg sync.WaitGroup
 	wg.Add(3)
 	go func() {
@@ -112,6 +124,7 @@ func (l *Level) Update() error {
 			if torpedo.Rect().AlignedCollides(l.ship.Rect()) {
 				torpedo.IsActive = false
 				l.ship.WasHit()
+				l.particles = append(l.particles, NewParticle(ParticleShipHit, torpedo.X, torpedo.Y-torpedo.Height/2))
 				l.interactor.PlaySound(SOUNDS_HIT)
 			}
 		}
@@ -125,6 +138,7 @@ func (l *Level) Update() error {
 				if dc.Rect().AlignedCollides(sub.Rect()) {
 					dc.IsActive = false
 					sub.IsActive = false
+					l.particles = append(l.particles, NewParticle(ParticleSubExplosion, sub.X, sub.Y))
 					l.interactor.PlaySound(SOUNDS_EXP_UNDERWATER)
 					l.ship.incrementScore(250)
 				}
@@ -141,6 +155,7 @@ func (l *Level) Update() error {
 					torpedo.IsActive = false
 					dc.IsActive = false
 					l.ship.incrementScore(125)
+					l.particles = append(l.particles, NewParticle(ParticleDepthChargeTorpedoExplosion, torpedo.X, torpedo.Y-torpedo.Height/2))
 				}
 			}
 		}
@@ -150,7 +165,7 @@ func (l *Level) Update() error {
 	wg.Wait()
 
 	// Are we still alive
-	if l.ship.health < 0 {
+	if !l.ship.IsActive {
 		l.interactor.GameOver()
 	}
 
@@ -181,6 +196,10 @@ func (l *Level) Draw(screen *ebiten.Image) {
 		torpedo.Draw(screen)
 	}
 
+	for _, particle := range l.particles {
+		particle.Draw(screen)
+	}
+
 	// Drawing ocean
 	opts := &ebiten.DrawImageOptions{}
 	opts.ColorScale.ScaleAlpha(0.45)
@@ -204,6 +223,10 @@ func (l *Level) Draw(screen *ebiten.Image) {
 		face,
 		txtOpts,
 	)
+
+	if l.ship.health <= 0 {
+
+	}
 }
 
 func (l *Level) requestCharge(isFront bool) {

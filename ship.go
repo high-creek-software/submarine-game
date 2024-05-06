@@ -1,4 +1,4 @@
-package main
+package submarinegame
 
 import (
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -13,6 +13,13 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
+type ShipType int
+
+const (
+	ShipTypeOne ShipType = iota
+	ShipTypeTwo
+)
+
 type Ship struct {
 	*Entity
 	shipSpeed     float64
@@ -21,9 +28,10 @@ type Ship struct {
 	sprite          *ebiten.Image
 	hitboxComponent *debug.HitBoxDrawComponent
 
-	maxHealth     float64
-	health        float64
-	idleAnimation *display.AnimateComponent
+	maxHealth       float64
+	health          float64
+	idleAnimation   *display.AnimateComponent
+	brokenAnimation *display.AnimateComponent
 
 	lastFire time.Time
 	cooldown time.Duration
@@ -31,20 +39,31 @@ type Ship struct {
 	score int64
 }
 
-func NewShip() *Ship {
+func NewShip(shipType ShipType) *Ship {
 	ship := &Ship{
-		Entity:    NewEntity(40, 105, 128, 40),
-		shipSpeed: 3,
-		maxHealth: 6,
-		health:    6,
-		cooldown:  800 * time.Millisecond,
+		Entity: NewEntity(40, 105, 128, 40),
 	}
 
-	//ship.sprite = assetLoader.MustLoadImage("assets/ship/0.png")
+	var idleShip []*ebiten.Image
+	var brokenShip []*ebiten.Image
+	if shipType == ShipTypeOne {
+		ship.shipSpeed = 3
+		ship.maxHealth = 6
+		ship.health = 6
+		ship.cooldown = 800 * time.Millisecond
+		idleShip = assetLoader.LoadConcurrentDirectory("assets/ship/idle", "png", 4)
+		brokenShip = assetLoader.LoadConcurrentDirectory("assets/ship/broken", "png", 4)
+	} else {
+		ship.shipSpeed = 4
+		ship.maxHealth = 6
+		ship.health = 6
+		ship.cooldown = 1000 * time.Millisecond
+		idleShip = assetLoader.LoadConcurrentDirectory("assets/ship2/idle", "png", 4)
+		brokenShip = assetLoader.LoadConcurrentDirectory("assets/ship2/broken", "png", 4)
+	}
 
-	idleShip := assetLoader.LoadConcurrentDirectory("assets/ship2", "png", 4)
 	ship.idleAnimation = display.NewAnimateComponent(ship, 3, idleShip)
-
+	ship.brokenAnimation = display.NewAnimateComponent(ship, 3, brokenShip)
 	ship.hitboxComponent = debug.NewHitBoxDrawComponent(ship, false, ship.Width, ship.Height)
 
 	return ship
@@ -55,9 +74,17 @@ func (s *Ship) UpdateForLevel(requestCharge func(isFront bool)) {
 }
 
 func (s *Ship) Update() error {
-	s.move()
-	s.fire()
-	s.idleAnimation.Update()
+	if s.health > 0 {
+		s.move()
+		s.fire()
+		s.idleAnimation.Update()
+	} else {
+		s.brokenAnimation.Update()
+		s.Y += 1
+		if s.Y > SCREEN_HEIGHT {
+			s.IsActive = false
+		}
+	}
 	return nil
 }
 
@@ -107,7 +134,11 @@ func (s *Ship) Draw(screen *ebiten.Image) {
 	// Ship
 	//vector.DrawFilledRect(screen, s.X, s.Y, s.Width, s.Height, colornames.Orange, true)
 
-	s.idleAnimation.Draw(screen, 0, 0)
+	if s.health > 0 {
+		s.idleAnimation.Draw(screen, 0, 0)
+	} else {
+		s.brokenAnimation.Draw(screen, 0, 0)
+	}
 	//s.hitboxComponent.Draw(screen, 0, 0)
 
 	maxWidth := float32(300.0)
@@ -132,6 +163,9 @@ func (s *Ship) incrementScore(delta int64) {
 }
 
 func (s *Ship) WasHit() {
+	if s.health == 0 {
+		return
+	}
 	s.health -= 1
 }
 

@@ -1,4 +1,4 @@
-package main
+package submarinegame
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
@@ -38,6 +38,7 @@ func (dc *DepthCharge) Draw(screen *ebiten.Image) {
 	//vector.DrawFilledRect(screen, float32(dc.X), float32(dc.Y), float32(dc.Width), float32(dc.Height), colornames.Purple, true)
 	opts := &ebiten.DrawImageOptions{}
 	opts.GeoM.Translate(-(dc.Width / 2), -(dc.Height / 2))
+	opts.GeoM.Scale(1.25, 1.25)
 
 	opts.GeoM.Translate(dc.X, dc.Y)
 	screen.DrawImage(dc.sprite, opts)

@@ -1,4 +1,4 @@
-package main
+package submarinegame
 
 import (
 	"github.com/quartercastle/vector"
