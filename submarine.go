@@ -60,7 +60,8 @@ func NewSubmarine(requestTorpedo func(sub *Submarine)) *Submarine {
 	// Picking the milliseconds of cooldown
 	cooldownDuration := (1500 + rand.IntN(4500))
 	// Parsing the duration, and interval of time
-	cooldown, _ := time.ParseDuration(fmt.Sprintf("%dms", cooldownDuration))
+	cooldown := time.Duration(cooldownDuration) * time.Millisecond
+	//cooldown, _ := time.ParseDuration(fmt.Sprintf("%dms", cooldownDuration))
 
 	img := assetLoader.MustLoadImage("assets/sub1/0.png")
 	sub := &Submarine{

@@ -50,6 +50,7 @@ type Game struct {
 	pointerX, pointerY int
 
 	audioContext  *audio.Context
+	seaLoop       *audio.Player
 	splashSound   *audio.Player
 	expUnderwater *audio.Player
 	missle        *audio.Player
@@ -215,6 +216,15 @@ func (g *Game) initializeSounds() {
 		slog.Info("error creating ping", "error", err)
 	} else {
 		g.ping.SetVolume(0.22)
+	}
+
+	if seaLoopReader, err := assetLoader.GetReader("assets/sounds/sea.mp3"); err == nil {
+		if stream, streamErr := mp3.DecodeWithoutResampling(seaLoopReader); streamErr == nil {
+			loop := audio.NewInfiniteLoop(stream, 24952000)
+			g.seaLoop, _ = g.audioContext.NewPlayer(loop)
+			g.seaLoop.SetVolume(0.44)
+			g.seaLoop.Play()
+		}
 	}
 
 }
