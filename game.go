@@ -222,7 +222,7 @@ func (g *Game) initializeSounds() {
 		if stream, streamErr := mp3.DecodeWithoutResampling(seaLoopReader); streamErr == nil {
 			loop := audio.NewInfiniteLoop(stream, 24952000)
 			g.seaLoop, _ = g.audioContext.NewPlayer(loop)
-			g.seaLoop.SetVolume(0.44)
+			g.seaLoop.SetVolume(0.15)
 			g.seaLoop.Play()
 		}
 	}

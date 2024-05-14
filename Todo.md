@@ -7,4 +7,4 @@
 [x] Keep score
 [x] Change levels
 [ ] Manage level complexity
-[ ] Explosion particles
+[x] Explosion particles
