@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	mobile.SetGame(submarinegame.NewGame())
+	mobile.SetGame(submarinegame.NewGame(true))
 }
 
 func Dummy() {}

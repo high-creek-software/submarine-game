@@ -13,15 +13,15 @@ type Torpedo struct {
 	sprite          *ebiten.Image
 }
 
-func NewTorpedo(x, y, speed float64) *Torpedo {
+func NewTorpedo() *Torpedo {
 
 	sprite := assetLoader.MustLoadImage("assets/torpedo/idle/0.png")
 	torpedo := &Torpedo{
-		Entity: NewEntity(x, y, 15, 30).SetCentered(),
-		speed:  speed,
+		Entity: NewEntity(0, 0, 15, 30).SetCentered(),
+		//speed:  speed,
 		sprite: sprite,
 	}
-	torpedo.hitboxComponent = debug.NewHitBoxDrawComponent(torpedo, true, torpedo.Width, torpedo.Height)
+	//torpedo.hitboxComponent = debug.NewHitBoxDrawComponent(torpedo, true, torpedo.Width, torpedo.Height)
 
 	return torpedo
 }

@@ -113,11 +113,11 @@ func pickLayer() float64 {
 
 	switch layer {
 	case 0:
-		y = WATER_SURFACE + 25 + float64(rand.IntN(int(third-50)))
+		y = WATER_SURFACE + float64(rand.IntN(int(third)))
 	case 1:
-		y = third + float64(rand.IntN(int(third-50)))
+		y = WATER_SURFACE + third + float64(rand.IntN(int(third-50)))
 	case 2:
-		y = third*2 + float64(rand.IntN(int(third-50)))
+		y = WATER_SURFACE + third*2 + float64(rand.IntN(int(third-50)))
 	}
 
 	return y

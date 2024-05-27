@@ -10,9 +10,11 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
+	"gitlab.com/high-creek-software/go2d/cache"
 	"gitlab.com/high-creek-software/go2d/loader"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"log"
 	"log/slog"
 	"os"
 	"time"
@@ -33,12 +35,17 @@ const (
 	SOUNDS_PING
 )
 
+var isMobile bool
+
 var mplusFaceSource *text.GoTextFaceSource
 var gamePrinter *message.Printer
 
 //go:embed assets
 var assets embed.FS
 var assetLoader *loader.AssetLoader
+
+var torpedoPool *cache.Pool[*Torpedo]
+var depthChargePool *cache.Pool[*DepthCharge]
 
 type Game struct {
 	ship               *Ship
@@ -58,19 +65,44 @@ type Game struct {
 	ping          *audio.Player
 }
 
-func NewGame() *Game {
+func NewGame(setMobile bool) *Game {
+	isMobile = setMobile
 	subGame := &Game{}
 	subGame.initializeLoader()
 	subGame.initializeUIComponents()
 	subGame.initializeSounds()
+	//subGame.levelIndex = 25
+
+	torpedoPool = cache.NewPool[*Torpedo](50, func() *Torpedo {
+		return NewTorpedo()
+	})
+	depthChargePool = cache.NewPool[*DepthCharge](50, func() *DepthCharge {
+		return NewDepthCharge(0, 0)
+	})
 
 	subGame.startScreen = NewStartScreen(subGame.GameStarted)
-	//subGame.startUI = NewStartUI()
+
+	// Loading image assets at startup to warm the cache
+	go func() {
+		NewDepthCharge(0, 0)
+		NewShip(ShipTypeOne)
+		NewShip(ShipTypeTwo)
+		NewTorpedo()
+		NewParticle(ParticleSubExplosion, 0, 0)
+		NewParticle(ParticleShipHit, 0, 0)
+		NewParticle(ParticleDepthChargeTorpedoExplosion, 0, 0)
+
+		assetLoader.MustLoadImage("assets/ocean.png")
+	}()
 
 	return subGame
 }
 
 func (g *Game) Update() error {
+	if g.seaLoop != nil && !g.seaLoop.IsPlaying() {
+		g.seaLoop.SetVolume(0.10)
+		g.seaLoop.Play()
+	}
 	if g.level != nil {
 		g.level.Update()
 	} else if g.gameOverScreen != nil {
@@ -103,10 +135,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 func (g *Game) Layout(ow, oh int) (w, h int) {
 	SCREEN_WIDTH = float64(ow)
 	SCREEN_HEIGHT = float64(oh)
+
 	return ow, oh
 }
 
 func (g *Game) GameStarted(shipType ShipType) {
+	slog.Info("Game started!")
 	g.ship = NewShip(shipType)
 	g.newLevel()
 }
@@ -184,6 +218,7 @@ func (g *Game) initializeLoader() {
 }
 
 func (g *Game) initializeSounds() {
+
 	g.audioContext = audio.NewContext(48_000)
 
 	var err error
@@ -191,39 +226,44 @@ func (g *Game) initializeSounds() {
 	if err != nil {
 		slog.Info("error creating splash", "error", err)
 	} else {
-		g.splashSound.SetVolume(0.33)
+		//g.splashSound.SetVolume(0.33)
 	}
 	g.expUnderwater, err = g.createAudioPlayer("assets/sounds/exp_underwater.mp3")
 	if err != nil {
 		slog.Info("error creating underwater subexplosion", "error", err)
 	} else {
-		g.expUnderwater.SetVolume(0.22)
+		//g.expUnderwater.SetVolume(0.22)
 	}
 	g.missle, err = g.createAudioPlayer("assets/sounds/missle.mp3")
 	if err != nil {
 		slog.Info("error creating missle", "error", err)
 	} else {
-		g.missle.SetVolume(0.33)
+		//g.missle.SetVolume(0.33)
 	}
 	g.hit, err = g.createAudioPlayer("assets/sounds/hit.mp3")
 	if err != nil {
 		slog.Info("error creating hit", "error", err)
 	} else {
-		g.hit.SetVolume(0.22)
+		//g.hit.SetVolume(0.22)
 	}
 	g.ping, err = g.createAudioPlayer("assets/sounds/ping.mp3")
 	if err != nil {
 		slog.Info("error creating ping", "error", err)
 	} else {
-		g.ping.SetVolume(0.22)
+		//g.ping.SetVolume(0.22)
 	}
 
 	if seaLoopReader, err := assetLoader.GetReader("assets/sounds/sea.mp3"); err == nil {
 		if stream, streamErr := mp3.DecodeWithoutResampling(seaLoopReader); streamErr == nil {
+			log.Println("Created sea stream", stream)
 			loop := audio.NewInfiniteLoop(stream, 24952000)
-			g.seaLoop, _ = g.audioContext.NewPlayer(loop)
-			g.seaLoop.SetVolume(0.15)
-			g.seaLoop.Play()
+			log.Println("created sea loop", loop)
+			g.seaLoop, err = g.audioContext.NewPlayer(loop)
+			if err != nil {
+				log.Println("error creating new sea player", err)
+			} else {
+				log.Println("created sea player", g.seaLoop)
+			}
 		}
 	}
 

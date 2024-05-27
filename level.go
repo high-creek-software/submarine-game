@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	MaxSubsOnScreen = 5
+	MaxSubsOnScreen = 25
 )
 
 /*type Attacker interface {
@@ -31,20 +31,29 @@ type Level struct {
 	ship              *Ship
 	depthCharges      []*DepthCharge
 	submarines        []*Submarine
+	keepSubmarines    []*Submarine
 	torpedoes         []*Torpedo
+	keepTorpedoes     []*Torpedo
 	interactor        LevelInteractor
 	particles         []*Particle
+	keepParticles     []*Particle
 
 	oceanImage *ebiten.Image
 }
 
 func NewLevel(interactor LevelInteractor, index int, ship *Ship) *Level {
-	oceanImg := assetLoader.MustLoadImage("assets/big_ocean.png")
+	oceanImg := assetLoader.MustLoadImage("assets/ocean.png")
 	level := &Level{
-		interactor: interactor,
-		index:      index,
-		ship:       ship,
-		oceanImage: ebiten.NewImageFromImage(oceanImg),
+		interactor:     interactor,
+		index:          index,
+		ship:           ship,
+		oceanImage:     ebiten.NewImageFromImage(oceanImg),
+		submarines:     make([]*Submarine, 0, 50),
+		keepSubmarines: make([]*Submarine, 0, 50),
+		torpedoes:      make([]*Torpedo, 0, 50),
+		keepTorpedoes:  make([]*Torpedo, 0, 50),
+		particles:      make([]*Particle, 0, 50),
+		keepParticles:  make([]*Particle, 0, 50),
 	}
 	ship.UpdateForLevel(level.requestCharge)
 
@@ -60,7 +69,7 @@ func NewLevel(interactor LevelInteractor, index int, ship *Ship) *Level {
 }
 
 func (l *Level) Update() error {
-	start := time.Now()
+	//start := time.Now()
 	l.ship.Update()
 
 	// This is the new array for active depth charges
@@ -69,28 +78,30 @@ func (l *Level) Update() error {
 		depthCharge.Update()
 		if depthCharge.IsActive {
 			keepDepthCharges = append(keepDepthCharges, depthCharge)
+		} else {
+			depthChargePool.Return(depthCharge)
 		}
 	}
 	// Setting the active array back to the depthCharges
 	l.depthCharges = keepDepthCharges
 
-	var keepSubs []*Submarine
+	l.keepSubmarines = l.keepSubmarines[:0]
 	for _, sub := range l.submarines {
 		sub.Update()
 		if sub.IsActive {
-			keepSubs = append(keepSubs, sub)
+			l.keepSubmarines = append(l.keepSubmarines, sub)
 		} else {
 			l.destroyedSubCount += 1
 
 			if l.index > MaxSubsOnScreen {
 				if l.destroyedSubCount+MaxSubsOnScreen <= l.index {
-					keepSubs = append(keepSubs, SpawnSub(l.requestTorpedo))
+					l.keepSubmarines = append(l.keepSubmarines, SpawnSub(l.requestTorpedo))
 					l.interactor.PlaySoundDelay(SOUNDS_PING, 1500*time.Millisecond)
 				}
 			}
 		}
 	}
-	l.submarines = keepSubs
+	l.submarines = l.keepSubmarines
 
 	if len(l.submarines) == 0 && len(l.particles) == 0 {
 		// Finish the level
@@ -98,23 +109,25 @@ func (l *Level) Update() error {
 		return nil
 	}
 
-	var keepTorpedoes []*Torpedo
+	l.keepTorpedoes = l.keepTorpedoes[:0]
 	for _, torpedo := range l.torpedoes {
 		torpedo.Update()
 		if torpedo.IsActive {
-			keepTorpedoes = append(keepTorpedoes, torpedo)
+			l.keepTorpedoes = append(l.keepTorpedoes, torpedo)
+		} else {
+			torpedoPool.Return(torpedo)
 		}
 	}
-	l.torpedoes = keepTorpedoes
+	l.torpedoes = l.keepTorpedoes
 
-	var keepParticles []*Particle
+	l.keepParticles = l.keepParticles[:0]
 	for _, particle := range l.particles {
 		particle.Update()
 		if particle.IsActive {
-			keepParticles = append(keepParticles, particle)
+			l.keepParticles = append(l.keepParticles, particle)
 		}
 	}
-	l.particles = keepParticles
+	l.particles = l.keepParticles
 
 	var wg sync.WaitGroup
 	wg.Add(3)
@@ -126,6 +139,13 @@ func (l *Level) Update() error {
 				l.ship.WasHit()
 				l.particles = append(l.particles, NewParticle(ParticleShipHit, torpedo.X, torpedo.Y-torpedo.Height/2))
 				l.interactor.PlaySound(SOUNDS_HIT)
+				if isMobile {
+					if l.ship.health > 0 {
+						ebiten.Vibrate(&ebiten.VibrateOptions{Duration: 50 * time.Millisecond, Magnitude: 0.45})
+					} else {
+						ebiten.Vibrate(&ebiten.VibrateOptions{Duration: 500 * time.Millisecond, Magnitude: 0.75})
+					}
+				}
 			}
 		}
 		wg.Done()
@@ -169,7 +189,7 @@ func (l *Level) Update() error {
 		l.interactor.GameOver()
 	}
 
-	slog.Info("Update Duration", "duration", time.Now().Sub(start))
+	//slog.Info("Update Duration", "duration", time.Now().Sub(start))
 
 	return nil
 }
@@ -177,10 +197,6 @@ func (l *Level) Update() error {
 func (l *Level) Draw(screen *ebiten.Image) {
 	// Background
 	screen.Fill(colornames.Aliceblue)
-
-	// 006680ff
-	//clr := color.NRGBA{52, 91, 235, 128}
-	//vector.DrawFilledRect(screen, 0, float32(WATER_SURFACE), float32(SCREEN_WIDTH), float32(SCREEN_HEIGHT-WATER_SURFACE), clr, true)
 
 	l.ship.Draw(screen)
 	// Iteration type of loop
@@ -235,13 +251,22 @@ func (l *Level) requestCharge(isFront bool) {
 	if isFront {
 		x += l.ship.Width
 	}
+	depthCharge := depthChargePool.Borrow()
+	depthCharge.X = x
+	depthCharge.Y = l.ship.Y + 15
+	depthCharge.IsActive = true
 	// Depth charge fired from where the ship
-	l.depthCharges = append(l.depthCharges, NewDepthCharge(x, l.ship.Y+15))
+	l.depthCharges = append(l.depthCharges, depthCharge)
 	l.interactor.PlaySound(SOUNDS_SPLASH)
 }
 
 func (l *Level) requestTorpedo(submarine *Submarine) {
-	torpedo := NewTorpedo(submarine.X, submarine.Y, 2)
+	//torpedo := NewTorpedo(submarine.X, submarine.Y, 2)
+	torpedo := torpedoPool.Borrow()
+	torpedo.X = submarine.X
+	torpedo.Y = submarine.Y
+	torpedo.speed = 2
+	torpedo.IsActive = true
 	l.torpedoes = append(l.torpedoes, torpedo)
 	l.interactor.PlaySound(SOUNDS_MISSLE)
 }

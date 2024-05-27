@@ -9,6 +9,7 @@ import (
 	"gitlab.com/high-creek-software/go2d/components/debug"
 	"gitlab.com/high-creek-software/go2d/components/display"
 	"golang.org/x/image/colornames"
+	"log/slog"
 	"slices"
 )
 
@@ -29,15 +30,15 @@ func NewStartScreen(gameStarted func(shipType ShipType)) *StartScreen {
 
 	halfWidth := SCREEN_WIDTH / 2
 
-	shipOne := NewShipSelection(halfWidth-halfWidth/2-128/2, 200, "assets/ship/idle")
+	shipOne := NewShipSelection(halfWidth-halfWidth/2-128/2, 200, "assets/ship/idle", 0)
 	shipOne.selected = true
-	shipTwo := NewShipSelection(SCREEN_WIDTH/2+halfWidth/2+128/2, 200, "assets/ship2/idle")
+	shipTwo := NewShipSelection(SCREEN_WIDTH/2+halfWidth/2+128/2, 200, "assets/ship2/idle", 1)
 
 	return &StartScreen{
 		gameStarted: gameStarted,
 		shipOne:     shipOne,
 		shipTwo:     shipTwo,
-		startButton: NewBasicButton(0, 0, 100, 50),
+		startButton: NewBasicButton(0, 0, 100, 50, "Start"),
 	}
 }
 
@@ -61,26 +62,37 @@ func (s *StartScreen) Update() error {
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButton0) {
 		x, y := ebiten.CursorPosition()
 
-		rect := collision.NewRect(float64(x), float64(y), 1, 1)
+		s.handleTouch(x, y)
+	}
 
-		if rect.AlignedCollides(s.shipOne.Rect()) {
-			s.shipOne.selected = true
-			s.shipTwo.selected = false
-		} else if rect.AlignedCollides(s.shipTwo.Rect()) {
-			s.shipTwo.selected = true
-			s.shipOne.selected = false
-		} else if rect.AlignedCollides(s.startButton.Rect()) {
-			st := ShipTypeOne
-
-			if s.shipTwo.selected {
-				st = ShipTypeTwo
-			}
-
-			s.gameStarted(st)
-		}
+	touchIDS := inpututil.AppendJustReleasedTouchIDs(nil)
+	for _, tid := range touchIDS {
+		x, y := inpututil.TouchPositionInPreviousTick(tid)
+		slog.Info("Touch Happened", "X", x, "Y", y)
+		s.handleTouch(x, y)
 	}
 
 	return nil
+}
+
+func (s *StartScreen) handleTouch(x, y int) {
+	rect := collision.NewRect(float64(x), float64(y), 1, 1)
+
+	if rect.AlignedCollides(s.shipOne.Rect()) {
+		s.shipOne.selected = true
+		s.shipTwo.selected = false
+	} else if rect.AlignedCollides(s.shipTwo.Rect()) {
+		s.shipTwo.selected = true
+		s.shipOne.selected = false
+	} else if rect.AlignedCollides(s.startButton.Rect()) {
+		st := ShipTypeOne
+
+		if s.shipTwo.selected {
+			st = ShipTypeTwo
+		}
+
+		s.gameStarted(st)
+	}
 }
 
 func (s *StartScreen) Draw(screen *ebiten.Image) {
@@ -110,6 +122,8 @@ func (s *StartScreen) Draw(screen *ebiten.Image) {
 type ShipSelection struct {
 	*Entity
 
+	index int
+
 	animation       *display.AnimateComponent
 	hitBoxComponent *debug.HitBoxDrawComponent
 	selected        bool
@@ -133,6 +147,15 @@ func (s *ShipSelection) DrawOffset() (float64, float64) {
 
 func (s *ShipSelection) Update() error {
 	s.animation.Update()
+
+	halfWidth := SCREEN_WIDTH / 2
+
+	if s.index == 0 {
+		s.X = halfWidth - halfWidth/2 - 128/2
+	} else {
+		s.X = halfWidth + halfWidth/2 + 128/2
+	}
+
 	return nil
 }
 
@@ -144,10 +167,11 @@ func (s *ShipSelection) Draw(screen *ebiten.Image) {
 	}
 }
 
-func NewShipSelection(x, y float64, root string) *ShipSelection {
+func NewShipSelection(x, y float64, root string, index int) *ShipSelection {
 
 	ship := &ShipSelection{
 		Entity: NewEntity(x, y, 128, 45),
+		index:  index,
 	}
 
 	sprites := assetLoader.LoadConcurrentDirectory(root, "png", 4)
@@ -161,6 +185,8 @@ func NewShipSelection(x, y float64, root string) *ShipSelection {
 
 type BasicButton struct {
 	*Entity
+
+	message string
 }
 
 func (bb *BasicButton) Update() error {
@@ -178,7 +204,7 @@ func (bb *BasicButton) Draw(screen *ebiten.Image) {
 
 	vector.DrawFilledRect(screen, float32(bb.X), float32(bb.Y), float32(bb.Width), float32(bb.Height), colornames.White, true)
 
-	lbl := "Start"
+	lbl := bb.message
 	face := &text.GoTextFace{
 		Source: mplusFaceSource,
 		Size:   16,
@@ -196,8 +222,9 @@ func (bb *BasicButton) Draw(screen *ebiten.Image) {
 
 }
 
-func NewBasicButton(x, y, width, height float64) *BasicButton {
+func NewBasicButton(x, y, width, height float64, message string) *BasicButton {
 	return &BasicButton{
-		Entity: NewEntity(x, y, width, height),
+		Entity:  NewEntity(x, y, width, height),
+		message: message,
 	}
 }

@@ -7,7 +7,7 @@ import (
 
 func main() {
 
-	subGame := submarinegame.NewGame()
+	subGame := submarinegame.NewGame(false)
 
 	ebiten.SetWindowSize(1280, 720)
 	ebiten.SetWindowTitle("Submarine Game")

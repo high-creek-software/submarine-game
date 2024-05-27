@@ -23,3 +23,6 @@ go.work
 *.sublime-*
 *.idea
 assets/sounds
+local.properties
+submarinegame.aar
+submarinegame-sources.jar

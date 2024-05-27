@@ -24,11 +24,11 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
-     inkscape:zoom="0.5"
-     inkscape:cx="915"
-     inkscape:cy="253"
-     inkscape:window-width="1898"
-     inkscape:window-height="1024"
+     inkscape:zoom="0.2340803"
+     inkscape:cx="745.47067"
+     inkscape:cy="956.93656"
+     inkscape:window-width="1920"
+     inkscape:window-height="1131"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -55,18 +55,22 @@
        y1="77.990074"
        x2="136.89706"
        y2="-43.104343"
-       gradientUnits="userSpaceOnUse" />
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="scale(1.953125)" />
   </defs>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
     <rect
-       style="fill:url(#linearGradient2);stroke-width:3.86355;fill-opacity:1"
+       style="fill:url(#linearGradient2);fill-opacity:1;stroke-width:7.546"
        id="rect1"
-       width="338.66666"
-       height="153.45833"
+       width="661.45831"
+       height="299.7233"
        x="0"
-       y="0" />
+       y="0"
+       inkscape:export-filename="../assets/medium_ocean.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
   </g>
 </svg>
