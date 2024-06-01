@@ -178,7 +178,7 @@ func (g *Game) PlaySound(soundType SoundType) {
 			g.expUnderwater.Play()
 		}
 	case SOUNDS_MISSLE:
-		if g.missle != nil {
+		if g.missle != nil && !g.missle.IsPlaying() {
 			g.missle.Rewind()
 			g.missle.Play()
 		}

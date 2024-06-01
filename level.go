@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	MaxSubsOnScreen = 25
+	MaxSubsOnScreen = 8
 )
 
 /*type Attacker interface {
