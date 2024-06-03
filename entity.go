@@ -27,8 +27,8 @@ func (e *Entity) SetCentered() *Entity {
 	return e
 }
 
-func (e *Entity) At() vector.MutableVector {
-	return vector.MutableVector{float64(e.X), float64(e.Y)}
+func (e *Entity) At() vector.Vector {
+	return vector.Vector{e.X, e.Y}
 }
 
 func (e *Entity) Rect() collision.Rect {
