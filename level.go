@@ -1,12 +1,13 @@
 package submarinegame
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text/v2"
-	"golang.org/x/image/colornames"
 	"log/slog"
 	"sync"
 	"time"
+
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
+	"golang.org/x/image/colornames"
 )
 
 const (
@@ -42,7 +43,7 @@ type Level struct {
 }
 
 func NewLevel(interactor LevelInteractor, index int, ship *Ship) *Level {
-	oceanImg := assetLoader.MustLoadImage("assets/ocean.png")
+	oceanImg := assetLoader.MustLoadImage("assets/big_ocean.png")
 	level := &Level{
 		interactor:     interactor,
 		index:          index,
