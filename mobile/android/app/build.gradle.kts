@@ -9,6 +9,7 @@ plugins {
 android {
     namespace = "io.highcreeksoftware.submarinegamedemo"
     compileSdk = 36
+    ndkVersion = "29.0.14206865"
 
     defaultConfig {
         applicationId = "io.highcreeksoftware.submarinegamedemo"
