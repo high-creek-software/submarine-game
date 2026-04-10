@@ -1,0 +1,65 @@
+gomobile: go build -buildmode=c-shared -o=/tmp/gomobile-work-1058542560/android/src/main/jniLibs/x86/libgojni.so ./gobind failed: exit status 1
+# github.com/ebitengine/oto/v3/internal/oboe
+In file included from oboe_aaudio_AAudioLoader_android.cpp:20:
+./oboe_aaudio_AAudioLoader_android.h:117:14: error: redefinition of 'AAudio_FallbackMode'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2736:14: note: previous definition is here
+In file included from oboe_aaudio_AAudioLoader_android.cpp:20:
+./oboe_aaudio_AAudioLoader_android.h:123:14: error: redefinition of 'AAudio_StretchMode'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2756:14: note: previous definition is here
+In file included from oboe_aaudio_AAudioLoader_android.cpp:20:
+./oboe_aaudio_AAudioLoader_android.h:128:16: error: redefinition of 'AAudioPlaybackParameters'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2772:16: note: previous definition is here
+oboe_aaudio_AAudioLoader_android.cpp:592:5: error: static assertion failed due to requirement 'std::is_same<int, AAudio_DeviceType>::value': AAudio_DeviceType must be int32_t
+oboe_aaudio_AAudioLoader_android.cpp:394:42: note: expanded from macro 'ASSERT_INT32'
+# github.com/ebitengine/oto/v3/internal/oboe
+In file included from oboe_common_AudioStreamBuilder_android.cpp:20:
+In file included from ./oboe_aaudio_AAudioExtensions_android.h:29:
+./oboe_aaudio_AAudioLoader_android.h:117:14: error: redefinition of 'AAudio_FallbackMode'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2736:14: note: previous definition is here
+In file included from oboe_common_AudioStreamBuilder_android.cpp:20:
+In file included from ./oboe_aaudio_AAudioExtensions_android.h:29:
+./oboe_aaudio_AAudioLoader_android.h:123:14: error: redefinition of 'AAudio_StretchMode'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2756:14: note: previous definition is here
+In file included from oboe_common_AudioStreamBuilder_android.cpp:20:
+In file included from ./oboe_aaudio_AAudioExtensions_android.h:29:
+./oboe_aaudio_AAudioLoader_android.h:128:16: error: redefinition of 'AAudioPlaybackParameters'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2772:16: note: previous definition is here
+# github.com/ebitengine/oto/v3/internal/oboe
+In file included from oboe_aaudio_AudioStreamAAudio_android.cpp:21:
+./oboe_aaudio_AAudioLoader_android.h:117:14: error: redefinition of 'AAudio_FallbackMode'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2736:14: note: previous definition is here
+In file included from oboe_aaudio_AudioStreamAAudio_android.cpp:21:
+./oboe_aaudio_AAudioLoader_android.h:123:14: error: redefinition of 'AAudio_StretchMode'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2756:14: note: previous definition is here
+In file included from oboe_aaudio_AudioStreamAAudio_android.cpp:21:
+./oboe_aaudio_AAudioLoader_android.h:128:16: error: redefinition of 'AAudioPlaybackParameters'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2772:16: note: previous definition is here
+# github.com/ebitengine/oto/v3/internal/oboe
+In file included from oboe_common_OboeExtensions_android.cpp:18:
+In file included from ./oboe_aaudio_AAudioExtensions_android.h:29:
+./oboe_aaudio_AAudioLoader_android.h:117:14: error: redefinition of 'AAudio_FallbackMode'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2736:14: note: previous definition is here
+In file included from oboe_common_OboeExtensions_android.cpp:18:
+In file included from ./oboe_aaudio_AAudioExtensions_android.h:29:
+./oboe_aaudio_AAudioLoader_android.h:123:14: error: redefinition of 'AAudio_StretchMode'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2756:14: note: previous definition is here
+In file included from oboe_common_OboeExtensions_android.cpp:18:
+In file included from ./oboe_aaudio_AAudioExtensions_android.h:29:
+./oboe_aaudio_AAudioLoader_android.h:128:16: error: redefinition of 'AAudioPlaybackParameters'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2772:16: note: previous definition is here
+# github.com/ebitengine/oto/v3/internal/oboe
+In file included from oboe_common_QuirksManager_android.cpp:22:
+In file included from ./oboe_common_QuirksManager_android.h:22:
+In file included from ./oboe_aaudio_AudioStreamAAudio_android.h:29:
+./oboe_aaudio_AAudioLoader_android.h:117:14: error: redefinition of 'AAudio_FallbackMode'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2736:14: note: previous definition is here
+In file included from oboe_common_QuirksManager_android.cpp:22:
+In file included from ./oboe_common_QuirksManager_android.h:22:
+In file included from ./oboe_aaudio_AudioStreamAAudio_android.h:29:
+./oboe_aaudio_AAudioLoader_android.h:123:14: error: redefinition of 'AAudio_StretchMode'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2756:14: note: previous definition is here
+In file included from oboe_common_QuirksManager_android.cpp:22:
+In file included from ./oboe_common_QuirksManager_android.h:22:
+In file included from ./oboe_aaudio_AudioStreamAAudio_android.h:29:
+./oboe_aaudio_AAudioLoader_android.h:128:16: error: redefinition of 'AAudioPlaybackParameters'
+~/Android/Sdk/ndk/30.0.14904198/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/aaudio/AAudio.h:2772:16: note: previous definition is here
